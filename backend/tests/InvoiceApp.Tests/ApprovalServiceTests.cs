@@ -97,9 +97,17 @@ public class ApprovalServiceTests
     [Fact]
     public void Approve_RejectsInvoiceThatIsStillADraft()
     {
-        var service = ServiceFor(InvoiceWith("INV-1", InvoiceStatus.Draft));
+        var invoice = InvoiceWith("INV-1", InvoiceStatus.Draft);
+        var repository = new FakeInvoiceRepository(invoice);
+        var service = new ApprovalService(repository);
+        var before = DecisionFields(invoice);
 
-        Assert.Throws<InvalidOperationException>(() => service.Approve("INV-1", "demo.manager", "Manager"));
+        var ex = Assert.Throws<InvalidOperationException>(() => service.Approve("INV-1", "demo.manager", "Manager"));
+
+        Assert.Equal(typeof(InvalidOperationException), ex.GetType());
+        Assert.Contains("INV-1", ex.Message);
+        Assert.Equal(before, DecisionFields(invoice));
+        Assert.Equal(0, repository.UpdateCalls);
     }
 
     [Fact]
@@ -168,12 +176,13 @@ public class ApprovalServiceTests
         var invoice = InvoiceWith("INV-1", InvoiceStatus.Draft);
         var repository = new FakeInvoiceRepository(invoice);
         var service = new ApprovalService(repository);
+        var before = DecisionFields(invoice);
 
         var ex = Assert.Throws<InvalidOperationException>(() => service.Approve("INV-1", "demo.admin", "Admin"));
 
         Assert.Equal(typeof(InvalidOperationException), ex.GetType());
         Assert.Contains("INV-1", ex.Message);
-        Assert.Equal(InvoiceStatus.Draft, invoice.Status);
+        Assert.Equal(before, DecisionFields(invoice));
         Assert.Equal(0, repository.UpdateCalls);
     }
 
@@ -184,11 +193,13 @@ public class ApprovalServiceTests
         invoice.Status = InvoiceStatus.Approved;
         var repository = new FakeInvoiceRepository(invoice);
         var service = new ApprovalService(repository);
+        var before = DecisionFields(invoice);
 
         var ex = Assert.Throws<InvalidOperationException>(() => service.Approve("INV-1", "demo.manager", "Manager"));
 
         Assert.Equal(typeof(InvalidOperationException), ex.GetType());
-        Assert.Equal(InvoiceStatus.Approved, invoice.Status);
+        Assert.Contains("INV-1", ex.Message);
+        Assert.Equal(before, DecisionFields(invoice));
         Assert.Equal(0, repository.UpdateCalls);
     }
 

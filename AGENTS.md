@@ -26,7 +26,7 @@ Business rules, verbatim: R1 A Manager may approve invoices up to 50,000. R2 A D
 | R5 | A denial throws `ApprovalDeniedException` (derives from `InvalidOperationException`). `ApiControllerBase.Handle` maps it to HTTP 409 `{ "error": "<reason>" }`; the UI shows the text verbatim in the `#decision-error` alert. **All checks run before any field is changed and before `IInvoiceRepository.Update` is called.** |
 | Reject | Limits apply to approve only, never to reject. A Manager may reject a 1,000,000 invoice; rejecting after a first approval keeps `FirstApprovedBy`. |
 
-Check order in `Approve(invoiceId, approver, approverRole)`: invoice exists -> invoice is pending -> role has authority -> (amount > 500,000 ? two-approver checks : limit check) -> only then mutate and `Update`.
+Check order in `Approve(invoiceId, approver, approverRole)`: approver not blank (else `ArgumentException`, HTTP 400) -> invoice exists -> invoice is pending -> role has authority -> (amount > 500,000 ? two-approver checks : limit check) -> only then mutate and `Update`.
 
 Boundary values that must be tested on both sides: 49,999.99 / 50,000.00 / 50,000.01 / 500,000.00 / 500,000.01.
 
@@ -70,7 +70,7 @@ Code that looks right but is not, and what a test must assert to catch it:
 - Business rules go in the Domain project, never in controllers.
 - Register services in `Program.cs`. Repositories are interfaces in Domain with an in-memory implementation in Api.
 - Every new rule or endpoint needs tests. Use `FakeInvoiceRepository` in tests.
-- Use clear names; no one-letter variables or `flag` parameters.
+- Use clear names; no one-letter variables or `flag` parameters (product and test code; the tooling scripts in `.claude/hooks/` are exempt).
 - End-to-end tests use page objects and role-based locators (`getByRole`, `getByLabel`), never CSS or XPath selectors.
 
 ## Commands
@@ -86,7 +86,7 @@ Plain `dotnet` / `npm`, run from the repo root unless stated.
 | Mutation testing | `cd backend/tests/InvoiceApp.Tests && dotnet tool restore && dotnet stryker` (Stryker.NET 4.13.0 pinned in `.config/dotnet-tools.json`; mutates `InvoiceApp.Domain`; reports in `StrykerOutput/`, git-ignored; evidence in `docs/evidence/`) |
 | Spec validation | `npx @fission-ai/openspec@1.15.0 validate add-approval-limits-by-role --strict` |
 
-CI (`.github/workflows/ci.yml`) runs build and unit tests in Release on every PR to `main`.
+CI (`.github/workflows/ci.yml`) runs build and unit tests in Release on every PR to `main`. The Playwright e2e test and the Stryker run are local gates for now (commands above); adding them to CI is a deferred review item.
 
 ## Testing expectations
 
@@ -146,7 +146,7 @@ Agents live in `.claude/agents/<name>.md`:
 | `pr-reviewer` | Reviewing the PR diff with `review-pr`. |
 | `mutation-analyst` | Reading a Stryker report: explaining each surviving mutant and proposing the test that kills it (read-only). |
 
-Hooks (wired in `.claude/settings.json`): `ai-log.js` (logging), `guard.js` (blocks `git push`, remote changes, `gh`, `aws`), `format.js` (formats edited C# files).
+Hooks (wired in `.claude/settings.json`): `ai-log.js` (logging), `guard.js` (best-effort guard that blocks `git push`, remote changes, `gh`, `aws` by parsing Bash/PowerShell commands; defence in depth, not a security boundary), `format.js` (formats edited C# files).
 
 ## Demo accounts (not real credentials)
 

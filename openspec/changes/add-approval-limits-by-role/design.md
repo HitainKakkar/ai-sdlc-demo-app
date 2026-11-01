@@ -11,7 +11,7 @@ See proposal.md (Why) for the motivation and specs/invoice-approval/spec.md for 
 - `InMemoryInvoiceRepository` returns the same object instances it stores. Any field set on an invoice before a throw is therefore visible to every later reader, even if `Update` is never called.
 - `FakeInvoiceRepository.Update` is a no-op today.
 
-Binding decisions: `_plan/DECISIONS.md` D-04 to D-10, D-31, D-33 to D-36.
+Binding decisions: `docs/decisions/DECISIONS.md` D-04 to D-10, D-31, D-33 to D-36.
 
 ## Goals / Non-Goals
 
@@ -52,13 +52,14 @@ The controller passes `session.Username` and `session.Role`, so the Domain never
 ### D3 Check order, with every check before any mutation (D-10, D-36)
 
 ```
+approver blank                     -> ArgumentException (400) (D-40, added after the step-2 test review)
 Find(invoiceId)                    -> KeyNotFoundException (404), unchanged
 EnsurePending(invoice)             -> InvalidOperationException (409), existing message unchanged
 limit = LimitFor(approverRole)     -> null: deny (a)
 if amount > TwoApproverThreshold:
-    Step 1: deny (c)
+    Step 1 (C3 only, retired in C4): deny (c)
     Step 2:
-        FirstApprovedBy is null    -> record first approval, Update, return (200)
+        FirstApprovedBy null/blank -> record first approval, Update, return (200)
         SameUser(first, approver)  -> deny (d)          // before the role check
         role != "Director"         -> deny (e)
         else                       -> Approved, DecidedBy = approver, DecidedAt = now, keep FirstApproved*, Update
@@ -136,7 +137,7 @@ Message (c) exists only at commit C3, so it is not a requirement in the spec, wh
 
 - **Unit tests (xUnit, `backend/tests/InvoiceApp.Tests`):**
   - `ApprovalLimitsTests` for `LimitFor` (Manager, Director, Admin, `Approver`, `""`, `null`, `manager`).
-  - `ApprovalServiceTests` covers the `_plan/PLAN.md` §5 matrix: boundaries 49,999.99 / 50,000.00 / 50,000.01 / 500,000.00 / 500,000.01, the R3 first and second approvals, R4 exact / case / spaces, (e), Admin / unknown / empty, reject with no limit, and reject after a first approval.
+  - `ApprovalServiceTests` covers the the test matrix in `docs/decisions/DECISIONS.md` matrix: boundaries 49,999.99 / 50,000.00 / 50,000.01 / 500,000.00 / 500,000.01, the R3 first and second approvals, R4 exact / case / spaces, (e), Admin / unknown / empty, reject with no limit, and reject after a first approval.
   - Names follow `Method_Condition_ExpectedResult`.
 - **Denial assertions:** each denial test checks four things:
   - `ApprovalDeniedException`.

@@ -84,9 +84,9 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
 
 ## 5. Agent review and verdicts (commit C7)
 
-- [ ] 5.1 Produce the diff `main...feature/approval-limits-by-role`. Run the `pr-reviewer` agent with the `review-pr` skill, using three lenses: rule correctness R1 to R5, test quality, and layering/API/security/docs. Verify that each lens returns a findings table with IDs `R-xx` and file:line references.
-- [ ] 5.2 Give every finding exactly one verdict (fixed with commit, dismissed with reason, or deferred with reason and follow-up) and apply the fixes. Verify that `dotnet test`, the e2e test and `openspec validate add-approval-limits-by-role --strict` are all green again.
-- [ ] 5.3 Write the verdicts to `docs/review/REVIEW_FINDINGS.md` and the PR description, and tick the completed tasks in this file. Verify that no finding is left without a verdict.
+- [x] 5.1 Produce the diff `main...feature/approval-limits-by-role`. Run the `pr-reviewer` agent with the `review-pr` skill, using three lenses: rule correctness R1 to R5, test quality, and layering/API/security/docs. Verify that each lens returns a findings table with IDs `R-xx` and file:line references.
+- [x] 5.2 Give every finding exactly one verdict (fixed with commit, dismissed with reason, or deferred with reason and follow-up) and apply the fixes. Verify that `dotnet test`, the e2e test and `openspec validate add-approval-limits-by-role --strict` are all green again.
+- [x] 5.3 Write the verdicts to `docs/review/REVIEW_FINDINGS.md` and the PR description, and tick the completed tasks in this file. Verify that no finding is left without a verdict.
 
 ## 6. Write-up and AI interaction log (commit C8)
 

@@ -26,3 +26,17 @@ Running 1 test using 1 worker
    original text restored -> 1 passed
 
 3) Headed run for the demo video (e2e-author): npm run test:headed -> 1 passed (browser window opened).
+
+4) After the PR review (finding RB-01: reload + server-state checks; RB-02: column headers pinned; RB-03: no server reuse on CI).
+   Run on the C7 working tree, port 5000 free, webServer started the API:
+
+> test
+> playwright test
+
+
+Running 1 test using 1 worker
+
+  ok 1 [chromium] › tests\approval-limits.spec.ts:9:5 › Manager cannot approve an invoice above 50,000 (4.7s)
+
+  1 passed (11.8s)
+   Proof (e2e-author): expecting status 'Approved' from GET /api/invoices/{id} -> Expected: "Approved" Received: "PendingApproval" -> 1 failed; restored -> 1 passed.

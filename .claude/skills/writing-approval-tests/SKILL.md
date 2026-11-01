@@ -53,7 +53,7 @@ public void Approve_ManagerAtOrBelowLimit_Approves(decimal amount) { ... }
 | R1 | Manager 49,999.99 / 50,000.00 | Approved, `DecidedBy`, `DecidedAt` set, `UpdateCalls == 1` |
 | R1 | Manager 50,000.01 | Denied (b); checklist |
 | R2 | Director 500,000.00 | Approved alone |
-| R2 | Director 500,000.01 | step 1: denied (c); step 2: first approval only, still pending |
+| R2 | Director 500,000.01 | first approval only, still pending (the step-1 message (c) is retired) |
 | R3 | >500k first by Manager / by Director | `PendingApproval`, `FirstApprovedBy` = approver, `FirstApprovedAt` set, `DecidedBy` null, `UpdateCalls == 1` |
 | R3 | >500k second by different Director | Approved, `DecidedBy` = second, `FirstApprovedBy` kept |
 | R3 | >500k second by a different Manager | Denied (e); checklist |

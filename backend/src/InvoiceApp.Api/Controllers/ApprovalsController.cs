@@ -6,7 +6,7 @@ namespace InvoiceApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[RequireRole("Manager", "Director", "Admin")]
+[RequireRole(ApprovalLimits.ManagerRole, ApprovalLimits.DirectorRole, "Admin")]
 public class ApprovalsController : ApiControllerBase
 {
     private readonly ApprovalService _approvals;

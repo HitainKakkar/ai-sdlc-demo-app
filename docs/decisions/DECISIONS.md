@@ -1,0 +1,55 @@
+# Design and process decisions — approval limits by role
+
+Decisions referenced by `AGENTS.md`, the skills, the agents and the OpenSpec change. IDs are stable; gaps in the numbering are decisions about the participant's local environment and logistics, which are not part of the repository.
+
+## Feature decisions
+
+| ID | Decision | Why |
+|---|---|---|
+| D-04 | New roles `Manager` and `Director`. Demo users `demo.manager` (Manager), `demo.director` and `demo.director2` (Director), `demo.admin` (Admin). `demo.approver` (Approver) is removed. Admin keeps delete rights and may reject, but has no approval authority. | The brief speaks only of Manager and Director; two different Directors are needed to show R3/R4. |
+| D-05 | `ApprovalsController` is gated with `[RequireRole(Manager, Director, Admin)]`; the Domain is authoritative on limits through `ApprovalLimits.LimitFor(role)` (Manager 50,000, Director 500,000, anything else `null` = no authority). | Business rules live in the Domain; the attribute only gates the endpoint. Admin is let through so it gets a clear reason instead of a bare 403. |
+| D-06 | `Approve(invoiceId, approver, approverRole)`; the controller passes the session's username and role. | The role reaches the Domain without the Domain knowing about sessions; the role is never taken from the request body. |
+| D-07 | Denials throw `ApprovalDeniedException : InvalidOperationException`. | The existing `ApiControllerBase.Handle` maps it to HTTP 409 `{ "error": ... }` and the UI already shows `error`. |
+| D-08 | Limits are inclusive ("up to"): 50,000.00 is allowed for a Manager, 50,000.01 is not; 500,000.00 is allowed for one Director, 500,000.01 needs two approvers. | Plain reading of "up to"; every boundary is a test case. |
+| D-09 | No new status for two-step approval: `FirstApprovedBy` / `FirstApprovedAt` record the first approval (Manager or Director) and the invoice stays `PendingApproval`; the second approval must be a different user and a Director; the first approver is kept for audit. | Smallest change that is still auditable; the UI already filters on `PendingApproval`. |
+| D-10 | Check order: approver not blank → invoice exists → invoice pending → role has authority → (amount > 500,000 ? two-approver checks : limit check). **Every check runs before any field is changed and before `Update` is called.** `FakeInvoiceRepository` counts `Update` calls so tests can prove nothing was saved. | R5. |
+| D-31 | Canonical denial messages (amounts `N2`, invariant culture): (a) `Role 'Admin' cannot approve invoices. Only a Manager or a Director can approve.` (b) `A Manager may approve invoices up to 50,000.00; invoice INV-1006 is 75,000.00. A Director must approve it.` (c) *retired step-1 placeholder:* `Invoice INV-1007 is 750,000.00, above 500,000.00, and needs two approvers; two-approver approval is not available yet.` (d) `demo.director already gave the first approval for invoice INV-1007; the second approval must come from a different person.` (e) `The second approval for invoice INV-1007 (above 500,000.00) must come from a Director; demo.manager is a Manager.` | One wording shared by code, tests, e2e, spec and docs. |
+| D-33 | Demo accounts change in the step-1 commit, not in the context commit. | Each commit stays consistent with the code at that commit. |
+| D-34 | Identity for R4: trim both names, then compare with `StringComparison.OrdinalIgnoreCase` against the stored `FirstApprovedBy`. | `demo.director`, `Demo.Director` and ` demo.director ` are the same person; ordinal so the result does not depend on the server culture. |
+| D-35 | Follow-ups owned by the step-1 commit: AGENTS.md role-gate wording and the demo-accounts tables in AGENTS.md and README. | Keeps the context commit consistent with the code at that commit. |
+| D-36 | Same-user check (d) runs before the Director check (e); role names match exactly as configured; seeds `INV-1006` (75,000) and `INV-1007` (750,000), next id `INV-1008`; seeded `INV-1003` decided by `demo.director`. | A Manager repeating their own first approval gets the R4 reason; no duplicate ids; no dangling user. |
+| D-40 | A blank approver is rejected with `ArgumentException` (HTTP 400) before anything else; a blank recorded `FirstApprovedBy` does not count as a first approval. | Found by the step-2 test review (T-07): keeps R3 guaranteed by the Domain, not only by the API. |
+
+## Tooling and process decisions
+
+| ID | Decision | Why |
+|---|---|---|
+| D-02 | Spec-driven tool: OpenSpec 1.15.0 via `npx @fission-ai/openspec@1.15.0` (telemetry off with `OPENSPEC_TELEMETRY=0`). | Plain Markdown in the repo, strict validation, no extra runtime. |
+| D-11 | Mutation testing: Stryker.NET 4.13.0 as a local tool, config `backend/tests/InvoiceApp.Tests/stryker-config.json`, mutate `InvoiceApp.Domain`; the BEFORE run is on untouched `main`, the AFTER run uses the identical config. | Honest before/after comparison. |
+| D-12 | The AI interaction log is generated by hooks (`.claude/hooks/ai-log.js`) into `logs/ai-interactions.jsonl` (one fixed schema per line, see `logs/README.md`) plus a readable summary, and can be rebuilt from the Claude Code transcript. | Automatic, structured, traceable. |
+| D-15 | End-to-end scenario: a Manager creates a 60,000 invoice through the UI, submits it, tries to approve it, sees the exact reason, and the invoice is still pending — checked again after a page reload and through the API. Page objects and role-based locators only. | Proves the reason reaches the user and nothing changes end to end. |
+| D-16 | The workshop review prompt was not available; the review uses our own structured prompt in `.claude/skills/review-pr/SKILL.md` (three lenses: rules, tests, layering/API/security/docs). | The brief requires a review prompt and a verdict per finding. |
+| D-19 | Everything runs on Windows (PowerShell / Git Bash); Stryker is a local dotnet tool; npm dependencies are local. | Reproducible without admin rights. |
+| D-26 | The submitted log is curated, never invented: every record maps to a real transcript entry; machine records (agents, tools, verifications, commits) are kept as they happened. | Transparency for the reviewer. |
+| D-29 | The upstream `demo/*` branches were inspected read-only; they are sample pull requests and contain no review prompt. | Basis for D-16. |
+| D-32 | Fixed names — skills: `approval-rules`, `writing-approval-tests`, `playwright-e2e`, `openspec-workflow`, `mutation-testing`, `review-pr`, `ai-log`; agents: `spec-author`, `domain-implementer`, `test-author`, `test-reviewer`, `e2e-author`, `pr-reviewer`, `mutation-analyst`; logger CLI `stage`, `human`, `rebuild`, `render`, `--selftest`. | Lets several agents work in parallel without drift. |
+| D-42 | Mutation target: make `Approve` and `LimitFor` actually mutable (behaviour-identical refactor after Stryker Safe Mode skipped `Approve`), kill 100 % of non-equivalent mutants in approval code, add clearly labelled tests for `DiscountCalculator` and the `Invoice` defaults, keep the config unchanged. | Strongest evidence for "tests that would catch a real mistake". |
+
+## Test matrix (each row is a named xUnit test or theory row)
+
+| Rule | Case | Expected |
+|---|---|---|
+| R1 | Manager 49,999.99 / 50,000.00 | Approved, `UpdateCalls == 1` |
+| R1 | Manager 50,000.01 / 75,000.00 / 500,000.00 | Denied (b); unchanged; `UpdateCalls == 0` |
+| R2 | Director 50,000.01 / 500,000.00 | Approved alone; `FirstApprovedBy` stays null |
+| R2/R3 | Director or Manager on 500,000.01 / 750,000.00, no first approval | First approval recorded; still pending; `DecidedBy` null |
+| R3 | Second approval by a different Director (first by Director or Manager) | Approved; `DecidedBy` = second; first approver kept |
+| R3 | Second approval by a different Manager | Denied (e); unchanged |
+| R4 | Same user: exact, other case, spaces, tab, stored name in other case, Turkish culture | Denied (d); unchanged |
+| R4 | Manager repeating own first approval | Denied (d), not (e) |
+| R4 | Second Director whose name contains the first approver's name | Approved (no substring match) |
+| R5 | Every denial | Exact type, full message, six fields unchanged (also when they held values), `UpdateCalls == 0` |
+| — | Admin / unknown / empty / lower-case / padded role | Denied (a); Admin on > 500,000 gets (a) |
+| — | Blank approver; blank recorded first approver | `ArgumentException`; blank first approver is not an approval (D-40) |
+| — | Reject at any amount, by Manager or Admin; reject after a first approval | Rejected; first approver kept |
+| — | Lifecycle: submit, not pending, not found, reason required | Existing behaviour, with messages and `UpdateCalls` asserted |

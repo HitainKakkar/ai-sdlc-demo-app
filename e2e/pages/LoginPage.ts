@@ -1,6 +1,9 @@
 import { type Locator, type Page } from '@playwright/test';
 
-/** Sign-in form on the start page. Role-based locators only. */
+/**
+ * Sign-in form on the start page. Label/role based locators (Username, Password, "Sign in"
+ * button, Invoices tab), plus one exact text match for the signed-in banner, which has no role.
+ */
 export class LoginPage {
   private readonly username: Locator;
   private readonly password: Locator;

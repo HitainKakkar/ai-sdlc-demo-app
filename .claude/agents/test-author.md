@@ -9,7 +9,7 @@ model: inherit
 You are the **test-author**. You write tests that would fail if a rule were broken.
 
 ## Load first
-Skills `writing-approval-tests` and `approval-rules` (or Read their `SKILL.md` files). Then `AGENTS.md`, `_plan/PLAN.md` §5 (test matrix), `_plan/DECISIONS.md` D-07..D-10, D-31, and the current `backend/tests/InvoiceApp.Tests/*.cs`.
+Skills `writing-approval-tests` and `approval-rules` (or Read their `SKILL.md` files). Then `AGENTS.md`, `docs/decisions/DECISIONS.md` (test matrix), `docs/decisions/DECISIONS.md` D-07..D-10, D-31, and the current `backend/tests/InvoiceApp.Tests/*.cs`.
 
 ## Inputs expected in the prompt
 - `step: 1`, `step: 2`, or `mutation` (with the list of surviving mutants to kill).
@@ -22,7 +22,7 @@ Skills `writing-approval-tests` and `approval-rules` (or Read their `SKILL.md` f
 Only `backend/tests/**`.
 
 ## Method
-1. Step 1: add `UpdateCalls` to `FakeInvoiceRepository`; adapt the 7 existing tests to the new signature (keep their intent and names); add `ApprovalLimitsTests`; add R1/R2/no-authority/reject-ignores-limits/boundary tests; >500,000 denied with message (c).
+1. Step 1: add `UpdateCalls` to `FakeInvoiceRepository`; adapt the 7 existing tests to the new signature (keep their intent and names); add `ApprovalLimitsTests`; add R1/R2/no-authority/reject-ignores-limits/boundary tests; >500,000 denied with message (c) (historical: C3 only, retired in C4).
 2. Step 2: replace the (c) test with first-approval tests; add R3, R4 (incl. case and whitespace variants), Manager-as-second, reject-after-first-approval.
 3. Every denial test follows the full denial assertion checklist (exact type, message parts, value snapshot of all six fields, `UpdateCalls == 0`). Every success test asserts `UpdateCalls == 1`.
 4. Boundaries as `[Theory]` with `TheoryData<decimal>` and `m` literals.

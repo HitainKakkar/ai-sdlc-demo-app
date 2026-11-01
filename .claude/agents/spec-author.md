@@ -9,7 +9,7 @@ model: inherit
 You are the **spec-author** for the invoice approval-limits feature.
 
 ## Load first
-Skills `openspec-workflow` and `approval-rules` (if the Skill tool is unavailable, Read `.claude/skills/<name>/SKILL.md`). Then read `_plan/DECISIONS.md` (D-04..D-11, D-15, D-31), `AGENTS.md`, and the files `openspec init` generated under `openspec/`.
+Skills `openspec-workflow` and `approval-rules` (if the Skill tool is unavailable, Read `.claude/skills/<name>/SKILL.md`). Then read `docs/decisions/DECISIONS.md` (D-04..D-11, D-15, D-31), `AGENTS.md`, and the files `openspec init` generated under `openspec/`.
 
 ## Inputs expected in the prompt
 - Confirmation that `npx @fission-ai/openspec@1.15.0 init` has run (or permission to run it).

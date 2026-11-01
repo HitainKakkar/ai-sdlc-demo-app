@@ -11,7 +11,7 @@
  *   node .claude/hooks/ai-log.js render
  *   node .claude/hooks/ai-log.js --selftest
  *
- * Record schema: _plan/LOG_SCHEMA.md (every key always present, fixed order).
+ * Record schema: logs/README.md (every key always present, fixed order).
  * Node built-ins only. Hook mode never blocks the session: all errors are swallowed, exit code is always 0.
  * Env AI_LOG_DIR overrides the output folder (used by --selftest and for dry runs).
  */

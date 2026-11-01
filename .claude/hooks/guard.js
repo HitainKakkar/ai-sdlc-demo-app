@@ -58,6 +58,10 @@ function headOf(seg) {
 function checkGit(args) {
   let i = 0;
   while (i < args.length && args[i].startsWith('-')) {
+    // `git -c alias.p=push p` (or `-c alias.x=!git push`) would hide the real subcommand.
+    if (/^-c$/i.test(args[i]) && /^alias\.[^=]+=.*\b(push|remote|credential)\b/i.test(String(args[i + 1] || ''))) {
+      return 'git aliases that run push/remote/credential commands are not allowed — pushing is done by the human only';
+    }
     i += /^(-C|-c|--git-dir|--work-tree|--namespace|--exec-path|--config-env)$/.test(args[i]) ? 2 : 1;
   }
   const sub = String(args[i] || '').toLowerCase();

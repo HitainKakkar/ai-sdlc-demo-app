@@ -5,7 +5,7 @@ description: Single source of truth for the invoice approval-limit rules R1–R5
 
 # Approval rules (R1–R5) — as implemented
 
-Binding sources: `_plan/DECISIONS.md` D-04..D-10, D-31. If code and this file disagree, stop and report; do not silently pick one.
+Binding sources: `docs/decisions/DECISIONS.md` D-04..D-10, D-31. If code and this file disagree, stop and report; do not silently pick one.
 
 ## Rules (verbatim from the brief)
 - **R1** A Manager may approve invoices up to 50,000.
@@ -22,19 +22,20 @@ Binding sources: `_plan/DECISIONS.md` D-04..D-10, D-31. If code and this file di
 | `Admin`, `Approver`, empty, null, anything else | `null` | never | Admin keeps delete rights and may still **reject** |
 
 - Limits are **inclusive** ("up to"). `TwoApproverThreshold = 500_000m`; two approvers are needed when `amount > 500_000m`.
-- Role names are matched exactly as configured in `appsettings.json` (`"Manager"`, `"Director"`), like `RequireRoleAttribute` does. (Exact-case matching is an assumption, not a DECISIONS item — confirm against `ApprovalLimits.cs`.)
+- Role names are matched exactly as configured in `appsettings.json` (`"Manager"`, `"Director"`), like `RequireRoleAttribute` does. (Decision D-36; pinned by tests, including lower-case and padded role names.)
 - Demo users (from C3 on): `demo.manager` (Manager), `demo.director` / `demo.director2` (Director), `demo.admin` (Admin); password `ChangeMe123!`. `demo.approver` is removed.
 - Limits apply to **approve only**. `Reject` works for Manager/Director/Admin at any amount and keeps `FirstApprovedBy`.
 
 ## Signature and check order (`ApprovalService.Approve(string invoiceId, string approver, string approverRole)`)
 Every check runs **before any field is changed and before `_repository.Update`**:
+0. `approver` null/empty/whitespace → `ArgumentException` (400) before anything else (D-40).
 1. `Find(invoiceId)` → `KeyNotFoundException` (404) if missing.
 2. `EnsurePending` → `InvalidOperationException` (409) if not `PendingApproval` (existing message, unchanged).
 3. `ApprovalLimits.LimitFor(approverRole)` is `null` → deny with message (a).
 4. `invoice.Amount > TwoApproverThreshold`?
-   - **Step 1 (commit C3):** deny with message (c) for everyone.
+   - *(Historical — commit C3 only, retired in C4: deny with message (c). Must not come back.)*
    - **Step 2 (commit C4):**
-     - `FirstApprovedBy` is null → record first approval: `FirstApprovedBy = approver`, `FirstApprovedAt = UtcNow`, status stays `PendingApproval`, `DecidedBy/DecidedAt` stay null, call `Update`, return (HTTP 200).
+     - `FirstApprovedBy` is null, empty or whitespace (D-40) → record first approval: `FirstApprovedBy = approver`, `FirstApprovedAt = UtcNow`, status stays `PendingApproval`, `DecidedBy/DecidedAt` stay null, call `Update`, return (HTTP 200).
      - `FirstApprovedBy` set and equal to `approver` (both `Trim()`ed, `StringComparison.OrdinalIgnoreCase`) → deny with (d).
      - role is not `Director` → deny with (e).
      - otherwise → `Status = Approved`, `DecidedBy = approver` (second), `DecidedAt = UtcNow`, keep `FirstApprovedBy/At`, `Update`.
@@ -44,12 +45,12 @@ Every check runs **before any field is changed and before `_repository.Update`**
 Same-user (d) is checked before the Director check (e), so a Manager who repeats their own first approval gets the R4 message (order inside step 2 is our choice; D-31 does not fix it).
 
 ## Errors → HTTP → UI
-`ApprovalDeniedException : InvalidOperationException` (Domain). `ApiControllerBase.Handle` maps it to **409** `{ "error": "<message>" }`; `app.js` shows `error` verbatim in `#decision-error` (`role="alert"`). No controller logic: `ApprovalsController` only passes `HttpContext.GetSession().Username` and `.Role`; its attribute is `[RequireRole("Manager","Director","Admin")]`.
+`ApprovalDeniedException : InvalidOperationException` (Domain). `ApiControllerBase.Handle` maps it to **409** `{ "error": "<message>" }`; `app.js` shows `error` verbatim in `#decision-error` (`role="alert"`). No controller logic: `ApprovalsController` only passes `HttpContext.GetSession().Username` and `.Role`; its attribute is `[RequireRole(ApprovalLimits.ManagerRole, ApprovalLimits.DirectorRole, "Admin")]`; any other signed-in role gets a bare 403 before the Domain runs.
 
 ## Canonical messages (D-31, verbatim; amounts `ToString("N2", CultureInfo.InvariantCulture)`)
 - (a) `Role 'Admin' cannot approve invoices. Only a Manager or a Director can approve.`
 - (b) `A Manager may approve invoices up to 50,000.00; invoice INV-1006 is 75,000.00. A Director must approve it.`
-- (c) step 1 only: `Invoice INV-1007 is 750,000.00, above 500,000.00, and needs two approvers; two-approver approval is not available yet.`
+- (c) *retired in C4 — must not appear in code or tests:* `Invoice INV-1007 is 750,000.00, above 500,000.00, and needs two approvers; two-approver approval is not available yet.`
 - (d) `demo.director already gave the first approval for invoice INV-1007; the second approval must come from a different person.`
 - (e) `The second approval for invoice INV-1007 (above 500,000.00) must come from a Director; demo.manager is a Manager.`
 
@@ -59,7 +60,7 @@ Same-user (d) is checked before the Director check (e), so a Manager who repeats
 | 49,999.99 / 50,000.00 | Approved | Approved | (a) |
 | 50,000.01 | (b) | Approved | (a) |
 | 500,000.00 | (b) | Approved alone | (a) |
-| 500,000.01 | first approval (step 2) / (c) step 1 | first approval only, never alone | (a) |
+| 500,000.01 | first approval (records `FirstApprovedBy`) | first approval only, never alone | (a) |
 | second approval > 500,000 | (e) (or (d) if same user) | Approved if different user, else (d) | (a) |
 
 ## Wrong implementations to avoid (look right, are not)

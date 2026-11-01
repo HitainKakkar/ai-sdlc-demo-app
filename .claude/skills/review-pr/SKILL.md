@@ -8,7 +8,7 @@ description: Our own structured code-review prompt for the approval-limits PR â€
 **Provenance:** the workshop review prompt was not provided (DECISIONS D-16, D-29: the upstream `demo/*` branches contain none). This prompt is ours and `ASSIGNMENT.md` says so.
 
 ## Inputs
-- The diff: `git diff main...HEAD` (the main agent saves it, e.g. `_plan/pr.diff`; reviewers do not run git).
+- The diff: `git diff main...HEAD` (the main agent saves it, e.g. a saved diff file such as `../pr.diff`; reviewers do not run git).
 - The spec: `openspec/changes/add-approval-limits-by-role/**`.
 - `AGENTS.md` and the `approval-rules` skill (rules, check order, canonical messages D-31).
 - The assigned lens: **A**, **B**, **C**, or all three.

@@ -9,7 +9,7 @@ model: inherit
 You are the **domain-implementer**. You change production code for ONE step, named in the prompt.
 
 ## Load first
-Skill `approval-rules` (or Read `.claude/skills/approval-rules/SKILL.md`). Then `AGENTS.md`, `_plan/DECISIONS.md` D-04..D-10, D-31, and the current `backend/src/**` files you will touch.
+Skill `approval-rules` (or Read `.claude/skills/approval-rules/SKILL.md`). Then `AGENTS.md`, `docs/decisions/DECISIONS.md` D-04..D-10, D-31, and the current `backend/src/**` files you will touch.
 
 ## Inputs expected in the prompt
 - `step: 1` or `step: 2`.
@@ -25,7 +25,7 @@ Only `backend/src/**`. Never `backend/tests/**`, `e2e/**`, docs, `.claude/**`.
 - Step 2: `Invoice.FirstApprovedBy` (`string?`), `Invoice.FirstApprovedAt` (`DateTime?`).
 
 ## Step 1 scope
-Domain: `ApprovalLimits.cs`, `ApprovalDeniedException.cs`, `Approve` with role + limit checks; amounts > 500,000 denied with message (c). Api: `ApprovalsController` → `[RequireRole("Manager","Director","Admin")]`, pass `HttpContext.GetSession().Role`; `appsettings.json` users `demo.manager`/Manager, `demo.director`/Director, `demo.director2`/Director, `demo.admin`/Admin (remove `demo.approver`); seed pending `INV-1006` 75,000.00 and `INV-1007` 750,000.00 in `InMemoryInvoiceRepository` (bump `_nextNumber` to 1008; fix `INV-1003` `DecidedBy` to an existing user).
+Domain: `ApprovalLimits.cs`, `ApprovalDeniedException.cs`, `Approve` with role + limit checks; amounts > 500,000 denied with message (c) (historical: C3 only, retired in C4). Api: `ApprovalsController` → `[RequireRole("Manager","Director","Admin")]`, pass `HttpContext.GetSession().Role`; `appsettings.json` users `demo.manager`/Manager, `demo.director`/Director, `demo.director2`/Director, `demo.admin`/Admin (remove `demo.approver`); seed pending `INV-1006` 75,000.00 and `INV-1007` 750,000.00 in `InMemoryInvoiceRepository` (bump `_nextNumber` to 1008; fix `INV-1003` `DecidedBy` to an existing user).
 
 ## Step 2 scope
 `Invoice.FirstApprovedBy/At`; two-approver flow per `approval-rules`; remove message (c); `app.js` pending row shows `Awaiting second approval (first: <user>)` when `firstApprovedBy` is set (build with `el(...)`/`textContent`, never `innerHTML`).

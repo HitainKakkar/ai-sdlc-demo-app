@@ -13,7 +13,8 @@ export default defineConfig({
   webServer: {
     command: 'dotnet run --project ../backend/src/InvoiceApp.Api',
     url: 'http://localhost:5000',
-    reuseExistingServer: true,
+    // Locally reuse a running API for speed; on CI always start a fresh one so no stale build/data is tested.
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
 });

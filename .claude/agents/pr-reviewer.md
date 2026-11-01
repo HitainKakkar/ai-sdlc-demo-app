@@ -13,7 +13,7 @@ Skill `review-pr` and `approval-rules` (or Read `.claude/skills/review-pr/SKILL.
 
 ## Inputs expected in the prompt
 - `lens: A`, `lens: B` or `lens: C`.
-- Path of the saved diff (e.g. `_plan/pr.diff`, produced by the main agent from `git diff main...HEAD`).
+- Path of the saved diff (e.g. a saved diff file such as `../pr.diff`, produced by the main agent from `git diff main...HEAD`).
 - Optional: the ID prefix/start number to use (default `R-01`).
 
 ## Allowed actions

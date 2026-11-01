@@ -7,7 +7,7 @@ Decides who may approve a pending invoice based on the approver's role and the i
 ## ADDED Requirements
 
 ### Requirement: Approval authority by role
-Only the roles `Manager` and `Director` SHALL have approval authority. Role names MUST match exactly as configured. An approval attempt by any other role, including `Admin`, an unknown role or an empty role, MUST be denied with the no-authority reason, regardless of the invoice amount.
+Only the roles `Manager` and `Director` SHALL have approval authority. Role names MUST match exactly as configured. In the approval service (Domain), an approval attempt by any other role, including `Admin`, an unknown role or an empty role, MUST be denied with the no-authority reason, regardless of the invoice amount.
 
 #### Scenario: Admin cannot approve
 - **GIVEN** a pending invoice INV-1001 of 4,250.00
@@ -31,6 +31,20 @@ Only the roles `Manager` and `Director` SHALL have approval authority. Role name
 - **GIVEN** a pending invoice of 100.00
 - **WHEN** a user whose role is `manager` (lower case) approves it
 - **THEN** the approval is denied with a reason that names the role `manager` and states `Only a Manager or a Director can approve.`
+
+### Requirement: Approval request gate and input validation
+Over HTTP, the approvals endpoint SHALL admit only the roles `Manager`, `Director` and `Admin`; any other signed-in role MUST receive status 403 before the approval service runs. The approval service MUST reject a blank approver name as invalid input before any other check.
+
+#### Scenario: Role outside the approvals gate gets 403 over HTTP
+- **GIVEN** a signed-in user whose role is neither `Manager`, `Director` nor `Admin`
+- **WHEN** they send `POST /api/approvals/{invoiceId}/approve`
+- **THEN** the response status is 403 and the invoice is unchanged
+
+#### Scenario: Blank approver name is rejected
+- **GIVEN** a pending invoice of 100.00
+- **WHEN** the approval service is asked to approve it with an empty or whitespace approver name
+- **THEN** the request is rejected as invalid input (HTTP 400 if it reached the API)
+- **AND** the invoice is unchanged and not saved
 
 ### Requirement: Manager approval limit
 A Manager SHALL be able to approve, alone, a pending invoice whose amount is at most 50,000.00 (the limit is inclusive). A Manager MUST be denied for any amount above 50,000.00 up to and including 500,000.00, with a reason that names the limit, the invoice id and the amount.

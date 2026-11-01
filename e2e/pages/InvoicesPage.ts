@@ -1,6 +1,11 @@
 import { type Locator, type Page } from '@playwright/test';
 
-/** Invoices tab: new-invoice form and the "All invoices" table. Role-based locators only. */
+/**
+ * Invoices tab: new-invoice form and the "All invoices" table.
+ * Locators are role/label based (tab, tabpanel, table, row, cell, columnheader, button,
+ * labelled inputs). Cells are picked by position (ID = first, Status = 4th); that column
+ * order is pinned by the spec asserting `columnHeaders()` before any cell is read.
+ */
 export class InvoicesPage {
   private readonly tab: Locator;
   private readonly panel: Locator;
@@ -15,6 +20,11 @@ export class InvoicesPage {
   async open(): Promise<void> {
     await this.tab.click();
     await this.table.waitFor();
+  }
+
+  /** Column headers of the table; the spec asserts ['ID', 'Customer', 'Amount', 'Status', 'Actions']. */
+  columnHeaders(): Locator {
+    return this.table.getByRole('columnheader');
   }
 
   /** Creates a Draft invoice and waits until its row is in the table. */
@@ -39,7 +49,7 @@ export class InvoicesPage {
     return id;
   }
 
-  /** The Status cell (4th column: ID, Customer, Amount, Status, Actions) of the customer's row. */
+  /** The Status cell (4th column, order pinned via `columnHeaders()`) of the customer's row. */
   statusOf(customer: string): Locator {
     return this.rowFor(customer).getByRole('cell').nth(3);
   }

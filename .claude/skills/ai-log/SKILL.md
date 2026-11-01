@@ -5,7 +5,7 @@ description: How the AI interaction log in this repo works (hooks writing logs/a
 
 # AI interaction log
 
-Deliverable D8 (DECISIONS D-12, D-26; schema in `_plan/LOG_SCHEMA.md`). Logging is **automatic**: hooks in `.claude/settings.json` call `.claude/hooks/ai-log.js` on SessionStart, UserPromptSubmit, PreToolUse/PostToolUse (Edit, Write, Bash, Agent, Skill, `mcp__*`), SubagentStop and Stop.
+Deliverable D8 (DECISIONS D-12, D-26; schema in `logs/README.md`). Logging is **automatic**: hooks in `.claude/settings.json` call `.claude/hooks/ai-log.js` on SessionStart, UserPromptSubmit, PostToolUse and PostToolUseFailure (every tool, incl. Agent, Skill and `mcp__*`), SubagentStop and Stop. PreToolUse runs only `guard.js`.
 
 ## Files
 - `logs/ai-interactions.jsonl` — one JSON object per interaction (machine-readable).
