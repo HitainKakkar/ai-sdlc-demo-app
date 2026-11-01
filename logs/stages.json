@@ -1,4 +1,14 @@
 [
-  { "name": "setup", "started_at": "2026-11-01T15:25:10.046Z" },
-  { "name": "context", "started_at": "2026-11-01T16:51:36.723Z" }
+  {
+    "name": "setup",
+    "started_at": "2026-11-01T15:25:10.046Z"
+  },
+  {
+    "name": "context",
+    "started_at": "2026-11-01T16:51:36.723Z"
+  },
+  {
+    "name": "spec",
+    "started_at": "2026-11-01T17:19:57.249Z"
+  }
 ]
