@@ -18,10 +18,19 @@ public static class ApprovalLimits
     /// Returns the highest amount the role may approve alone, or <c>null</c> when the role cannot approve.
     /// Role names are matched exactly as configured.
     /// </summary>
-    public static decimal? LimitFor(string? role) => role switch
+    public static decimal? LimitFor(string? role)
     {
-        ManagerRole => ManagerLimit,
-        DirectorRole => DirectorLimit,
-        _ => null,
-    };
+        // Plain comparisons (not a switch over const patterns) so mutation testing can mutate them.
+        if (role == ManagerRole)
+        {
+            return ManagerLimit;
+        }
+
+        if (role == DirectorRole)
+        {
+            return DirectorLimit;
+        }
+
+        return null;
+    }
 }

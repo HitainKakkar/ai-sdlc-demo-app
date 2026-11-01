@@ -78,9 +78,9 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
 
 ## 4. Mutation testing (commit C6)
 
-- [ ] 4.1 Run `cd backend/tests/InvoiceApp.Tests && dotnet tool restore && dotnet stryker` on the feature branch and record the score as text in `docs/evidence/stryker-after-1.md`. Verify that the file contains the Stryker summary table and the final score.
-- [ ] 4.2 Classify every mutant that survives in `ApprovalService.cs` and `ApprovalLimits.cs` as meaningful or equivalent, with a reason. Add tests that kill the meaningful ones. Verify that `dotnet test` is green.
-- [ ] 4.3 Rerun Stryker and record the score in `docs/evidence/stryker-after-final.md`, with the BEFORE score from `docs/evidence/stryker-before.md` next to it. Verify that the score is not lower than BEFORE and that every remaining survivor in approval code is explained.
+- [x] 4.1 Run `cd backend/tests/InvoiceApp.Tests && dotnet tool restore && dotnet stryker` on the feature branch and record the score as text in `docs/evidence/stryker-after-1.md`. Verify that the file contains the Stryker summary table and the final score.
+- [x] 4.2 Classify every mutant that survives in `ApprovalService.cs` and `ApprovalLimits.cs` as meaningful or equivalent, with a reason. Add tests that kill the meaningful ones. Verify that `dotnet test` is green.
+- [x] 4.3 Rerun Stryker and record the score in `docs/evidence/stryker-after-final.md`, with the BEFORE score from `docs/evidence/stryker-before.md` next to it. Verify that the score is not lower than BEFORE and that every remaining survivor in approval code is explained.
 
 ## 5. Agent review and verdicts (commit C7)
 

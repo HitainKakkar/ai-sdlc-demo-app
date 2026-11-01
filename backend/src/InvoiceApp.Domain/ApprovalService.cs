@@ -54,9 +54,12 @@ public class ApprovalService
         var invoice = Find(invoiceId);
         EnsurePending(invoice);
 
-        var limit = ApprovalLimits.LimitFor(approverRole)
-            ?? throw new ApprovalDeniedException(
+        var limit = ApprovalLimits.LimitFor(approverRole);
+        if (limit is null)
+        {
+            throw new ApprovalDeniedException(
                 $"Role '{approverRole}' cannot approve invoices. Only a Manager or a Director can approve.");
+        }
 
         if (invoice.Amount > ApprovalLimits.TwoApproverThreshold)
         {
@@ -82,10 +85,10 @@ public class ApprovalService
                     $"must come from a Director; {approver} is a {approverRole}.");
             }
         }
-        else if (invoice.Amount > limit)
+        else if (invoice.Amount > limit.Value)
         {
             throw new ApprovalDeniedException(
-                $"A {approverRole} may approve invoices up to {FormatAmount(limit)}; " +
+                $"A {approverRole} may approve invoices up to {FormatAmount(limit.Value)}; " +
                 $"invoice {invoice.Id} is {FormatAmount(invoice.Amount)}. A Director must approve it.");
         }
 
