@@ -33,7 +33,9 @@ Approval limits by role:
 | Director | up to 500,000.00 |
 | Admin | cannot approve (may reject and delete) |
 
-Invoices above 500,000.00 need two approvers; until that rule lands they cannot be approved. A denied approval returns HTTP 409 with the reason, the UI shows it, and the invoice does not change.
+Invoices above 500,000.00 need two different approvers: the first approval (Manager or Director) keeps the invoice pending and shows "Awaiting second approval (first: ...)"; the second must come from a Director who is not the first approver. A denied approval returns HTTP 409 with the reason, the UI shows it, and the invoice does not change.
+
+Try it with the seeded invoices: `INV-1006` (75,000.00) is denied for `demo.manager` and approved by `demo.director`; `INV-1007` (750,000.00) needs `demo.manager` or `demo.director` first, then a different Director (`demo.director2`).
 
 Invoices move through Draft, Pending Approval, then Approved or Rejected.
 

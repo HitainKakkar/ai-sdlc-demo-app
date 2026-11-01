@@ -95,6 +95,8 @@ In (a), the role is shown as received (an empty role gives `Role ''`). In (d), t
 
 `string.Equals(first?.Trim(), approver?.Trim(), StringComparison.OrdinalIgnoreCase)`. This treats `demo.director`, `Demo.Director` and ` demo.director ` as the same person. The comparison is against `FirstApprovedBy`, never against `DecidedBy`. **Alternative rejected:** ordinal `==`. Demo user names are lower case today, but a login that preserves case, or a stray space, would let one person give both approvals.
 
+Added after the step-2 test review (finding T-07, decision D-40): a recorded first approver that is empty or whitespace does not count as a first approval (`string.IsNullOrWhiteSpace`), and `Approve` rejects a blank approver name with `ArgumentException` (HTTP 400) before anything else. Through the API the approver is always the session username, so this only hardens the Domain: R3 holds even if a caller passes bad input. The comparison is ordinal on purpose; a test under the `tr-TR` culture (finding T-06) pins that it does not depend on the server's culture.
+
 ### D7 Data model: `FirstApprovedBy` and `FirstApprovedAt`, no new status (D-09)
 
 `Invoice` gets `string? FirstApprovedBy` and `DateTime? FirstApprovedAt`, added in Step 2. After the first approval, the invoice stays `PendingApproval`, so the UI pending filter, `Reject` and `EnsurePending` keep working without changes. On the second approval, `DecidedBy` and `DecidedAt` hold the second (final) approver, and the first approver is kept for audit. `Reject` does not touch the `FirstApproved*` fields. **Alternative rejected:** an `AwaitingSecondApproval` status. It has a wider blast radius (UI filter, `EnsurePending`, `Reject`, seeds), and R3 does not need it.

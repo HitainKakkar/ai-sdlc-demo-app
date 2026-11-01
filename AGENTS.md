@@ -36,7 +36,7 @@ Canonical denial messages (amounts formatted `N2` with `CultureInfo.InvariantCul
 | --- | --- | --- |
 | a | No authority | `Role 'Admin' cannot approve invoices. Only a Manager or a Director can approve.` |
 | b | Over Manager limit | `A Manager may approve invoices up to 50,000.00; invoice INV-1006 is 75,000.00. A Director must approve it.` |
-| c | Above 500,000 (**step-1 only, removed when the two-approver rule lands**) | `Invoice INV-1007 is 750,000.00, above 500,000.00, and needs two approvers; two-approver approval is not available yet.` |
+| c | *(retired)* Step-1 placeholder above 500,000, removed when the two-approver rule landed | `Invoice INV-1007 is 750,000.00, above 500,000.00, and needs two approvers; two-approver approval is not available yet.` — must no longer appear in code or tests |
 | d | Same user twice | `demo.director already gave the first approval for invoice INV-1007; the second approval must come from a different person.` |
 | e | Second approver not a Director | `The second approval for invoice INV-1007 (above 500,000.00) must come from a Director; demo.manager is a Manager.` |
 

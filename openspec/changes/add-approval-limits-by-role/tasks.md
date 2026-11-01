@@ -39,16 +39,16 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
 
 ## 2. Step 2: two-approver rule (commit C4)
 
-- [ ] 2.1 Add `string? FirstApprovedBy` and `DateTime? FirstApprovedAt` to `backend/src/InvoiceApp.Domain/Invoice.cs`. Verify that the build passes and that `GET /api/invoices` includes `firstApprovedBy` and `firstApprovedAt`.
-- [ ] 2.2 Replace the (c) branch in `ApprovalService.Approve` for amounts above `TwoApproverThreshold`:
+- [x] 2.1 Add `string? FirstApprovedBy` and `DateTime? FirstApprovedAt` to `backend/src/InvoiceApp.Domain/Invoice.cs`. Verify that the build passes and that `GET /api/invoices` includes `firstApprovedBy` and `firstApprovedAt`.
+- [x] 2.2 Replace the (c) branch in `ApprovalService.Approve` for amounts above `TwoApproverThreshold`:
   - If there is no first approval, set `FirstApprovedBy` and `FirstApprovedAt`, keep `PendingApproval`, call `Update` and return.
   - Otherwise, if it is the same user (trimmed, `OrdinalIgnoreCase`, compared with `FirstApprovedBy`), deny with (d).
   - Otherwise, if the role is not `Director`, deny with (e).
   - Otherwise set `Approved`, `DecidedBy = approver` and `DecidedAt`, keep the `FirstApproved*` values and call `Update`.
 
   Run all checks before any assignment. Remove message (c). Verify with the tests in 2.4.
-- [ ] 2.3 Make sure `Reject` leaves `FirstApprovedBy` and `FirstApprovedAt` untouched. Verify with the test `Reject_AfterFirstApproval_KeepsFirstApprover`.
-- [ ] 2.4 Replace the Step 1 (c) tests in `ApprovalServiceTests` with two-approver tests:
+- [x] 2.3 Make sure `Reject` leaves `FirstApprovedBy` and `FirstApprovedAt` untouched. Verify with the test `Reject_AfterFirstApproval_KeepsFirstApprover`.
+- [x] 2.4 Replace the Step 1 (c) tests in `ApprovalServiceTests` with two-approver tests:
   - first approval by Manager, and by Director, on 750,000.00 and on 500,000.01: stays pending, `FirstApprovedBy` and `FirstApprovedAt` set, `DecidedBy` null, `UpdateCalls == 1`;
   - second approval by a different Director: Approved, `DecidedBy` = second, first approver kept;
   - same Director twice → (d);
@@ -59,8 +59,8 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
   - reject after a first approval keeps the first approver.
 
   Each denial asserts all six fields unchanged and `UpdateCalls == 0`. Verify that `dotnet test backend/InvoiceApp.sln` is green and record the counts.
-- [ ] 2.5 In `wwwroot/app.js` `renderPending`, show `Awaiting second approval (first: <firstApprovedBy>)` when `firstApprovedBy` is set, with no limit logic in JavaScript. Verify manually with the Playwright MCP on INV-1007: `demo.manager` approves and the hint appears. `demo.director` then approves and gets an Approved invoice. Separately, the same director twice shows reason (d) in the alert. Take screenshots to `docs/evidence/step2-*.png`.
-- [ ] 2.6 API checks with curl for (d) and (e): each gives 409 with the exact `error` text, and a later `GET` shows the invoice unchanged. Verify by pasting the outputs into the WORKLOG.
+- [x] 2.5 In `wwwroot/app.js` `renderPending`, show `Awaiting second approval (first: <firstApprovedBy>)` when `firstApprovedBy` is set, with no limit logic in JavaScript. Verify manually with the Playwright MCP on INV-1007: `demo.manager` approves and the hint appears. `demo.director` then approves and gets an Approved invoice. Separately, the same director twice shows reason (d) in the alert. Take screenshots to `docs/evidence/step2-*.png`.
+- [x] 2.6 API checks with curl for (d) and (e): each gives 409 with the exact `error` text, and a later `GET` shows the invoice unchanged. Verify by pasting the outputs into the WORKLOG.
 
 ## 3. Playwright end-to-end test (commit C5)
 

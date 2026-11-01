@@ -127,6 +127,12 @@ An invoice whose amount is above 500,000.00 SHALL need two approvals. The first 
 - **WHEN** `demo.director` approves it
 - **THEN** the invoice status is `Approved` and `DecidedBy` is `demo.director`
 
+#### Scenario: A blank recorded first approver is not a first approval
+- **GIVEN** a pending invoice of 750,000.00 whose recorded first approver is empty or only spaces
+- **WHEN** `demo.director` approves it
+- **THEN** the approval is recorded as the first approval (`FirstApprovedBy` is `demo.director`)
+- **AND** the invoice status stays `PendingApproval` and `DecidedBy` stays empty
+
 ### Requirement: Same user never counts as both approvers
 On an invoice above 500,000.00 that already has a first approval, a second approval by the same user MUST be denied. User names SHALL be compared after trimming surrounding spaces and ignoring letter case. This check MUST run before the check that the second approver is a Director.
 
