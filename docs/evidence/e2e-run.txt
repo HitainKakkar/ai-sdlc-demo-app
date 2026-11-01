@@ -1,0 +1,28 @@
+Playwright end-to-end test — rejected over-limit approval through the UI
+Test: e2e/tests/approval-limits.spec.ts ("Manager cannot approve an invoice above 50,000")
+Page objects: e2e/pages/LoginPage.ts, InvoicesPage.ts, ApprovalsPage.ts (role-based locators only)
+Playwright: @playwright/test 1.63.0, chromium
+
+1) Final run on the committed step-2 code (C4), no server running beforehand: the webServer in
+   e2e/playwright.config.ts starts `dotnet run --project ../backend/src/InvoiceApp.Api` itself.
+   Command: cd e2e && npm test        (date: 2026-11-01, local)
+
+> test
+> playwright test
+
+
+Running 1 test using 1 worker
+
+  ok 1 [chromium] › tests\approval-limits.spec.ts:9:5 › Manager cannot approve an invoice above 50,000 (3.7s)
+
+  1 passed (11.1s)
+
+2) Proof the test is not vacuous (e2e-author sub-agent, against the step-1 build): expected text
+   temporarily changed to "40,000.00" ->
+     Error: expect(locator).toHaveText(expected) failed
+     Expected: "A Manager may approve invoices up to 40,000.00; invoice INV-1009 is 60,000.00. A Director must approve it."
+     Received: "A Manager may approve invoices up to 50,000.00; invoice INV-1009 is 60,000.00. A Director must approve it."
+     1 failed
+   original text restored -> 1 passed
+
+3) Headed run for the demo video (e2e-author): npm run test:headed -> 1 passed (browser window opened).

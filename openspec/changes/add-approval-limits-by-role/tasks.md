@@ -64,8 +64,8 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
 
 ## 3. Playwright end-to-end test (commit C5)
 
-- [ ] 3.1 Add page objects `e2e/pages/LoginPage.ts`, `e2e/pages/InvoicesPage.ts` and `e2e/pages/ApprovalsPage.ts`, using only `getByRole` and `getByLabel` (no CSS or XPath). Verify that a review of the files finds no `locator('.` or `xpath=` usage.
-- [ ] 3.2 Add `e2e/tests/approval-limits.spec.ts`:
+- [x] 3.1 Add page objects `e2e/pages/LoginPage.ts`, `e2e/pages/InvoicesPage.ts` and `e2e/pages/ApprovalsPage.ts`, using only `getByRole` and `getByLabel` (no CSS or XPath). Verify that a review of the files finds no `locator('.` or `xpath=` usage.
+- [x] 3.2 Add `e2e/tests/approval-limits.spec.ts`:
   1. Sign in as `demo.manager`.
   2. Create the invoice "Over-limit e2e <timestamp>" for 60,000.
   3. Submit it for approval.
@@ -74,7 +74,7 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
   6. Expect the invoice to be "Pending Approval".
 
   Verify that `cd e2e && npm install && npx playwright install chromium && npm test` passes with nothing else on port 5000.
-- [ ] 3.3 Save the run summary to `docs/evidence/e2e-run.txt` and run once with `npm run test:headed`. Verify that the evidence file exists and shows 1 passed.
+- [x] 3.3 Save the run summary to `docs/evidence/e2e-run.txt` and run once with `npm run test:headed`. Verify that the evidence file exists and shows 1 passed.
 
 ## 4. Mutation testing (commit C6)
 
