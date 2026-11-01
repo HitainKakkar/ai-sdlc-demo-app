@@ -90,9 +90,9 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
 
 ## 6. Write-up and AI interaction log (commit C8)
 
-- [ ] 6.1 Write `ASSIGNMENT.md`, covering the rules, design decisions, steps and commits, test matrix, mutation scores before and after, review verdicts, AI tooling and human oversight, and how to run. Verify that every command in it runs as written.
-- [ ] 6.2 Rebuild and render the AI interaction log (`node .claude/hooks/ai-log.js rebuild ...` and `render`) into `logs/ai-interactions.jsonl` and `logs/AI_INTERACTION_LOG.md`. Verify that every JSONL line parses and that there are entries for each stage and sub-agent.
-- [ ] 6.3 Final check on a clean local clone: build, `dotnet test`, e2e, `openspec validate add-approval-limits-by-role --strict`, and `git log` showing C1 to C8. Verify that all are green and that no secrets or bin/obj/node_modules folders are committed.
+- [x] 6.1 Write `ASSIGNMENT.md`, covering the rules, design decisions, steps and commits, test matrix, mutation scores before and after, review verdicts, AI tooling and human oversight, and how to run. Verify that every command in it runs as written.
+- [x] 6.2 Rebuild and render the AI interaction log (`node .claude/hooks/ai-log.js rebuild ...` and `render`) into `logs/ai-interactions.jsonl` and `logs/AI_INTERACTION_LOG.md`. Verify that every JSONL line parses and that there are entries for each stage and sub-agent.
+- [x] 6.3 Final check on a clean local clone: build, `dotnet test`, e2e, `openspec validate add-approval-limits-by-role --strict`, and `git log` showing C1 to C8. Verify that all are green and that no secrets or bin/obj/node_modules folders are committed.
 
 ## Workflow follow-up
 

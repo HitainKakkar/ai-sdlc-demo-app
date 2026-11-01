@@ -494,8 +494,113 @@ function gitCommits() {
   } catch { return []; }
 }
 
-function rebuild(paths) {
-  if (!paths.length) throw new Error('usage: rebuild <transcript.jsonl|dir> [...]');
+/* ------------------------------------------------------------ curation */
+// Optional curation of human turns for the submitted log (decisions D-41 / D-43):
+// verbatim human prompts are replaced by faithful paraphrases or checkpoints. Every curation
+// entry must match a REAL human entry of the transcript by exact timestamp, otherwise the
+// rebuild refuses — curated prompts can never be invented. A final scan fails the rebuild if
+// any 40-character fragment of a real human message survives anywhere in the output.
+const CURATION_MODES = ['summary', 'setup', 'checkpoint', 'exclude'];
+function loadCuration(file) {
+  const cfg = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (!cfg || !Array.isArray(cfg.turns)) throw new Error(`curation file ${file}: "turns" array missing`);
+  cfg.default = cfg.default || 'checkpoint';
+  for (const t of cfg.turns) {
+    if (!t.at || !CURATION_MODES.includes(t.mode)) throw new Error(`curation entry ${JSON.stringify(t).slice(0, 120)}: needs "at" and a mode in ${CURATION_MODES.join('/')}`);
+    if (t.mode === 'summary' && !t.prompt) throw new Error(`curation entry at ${t.at}: summary needs "prompt"`);
+  }
+  return cfg;
+}
+function normText(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function applyCuration(recs, cfg, real, stages) {
+  const byAt = new Map(cfg.turns.map(t => [t.at, t]));
+  for (const t of cfg.turns) {
+    const ok = t.source === 'queued_command' ? real.queuedTs.has(t.at) : real.promptTs.has(t.at);
+    if (!ok) throw new Error(`curation entry at ${t.at} does not match a real ${t.source || 'user'} entry in the transcript — refusing (curated prompts must map to real messages)`);
+  }
+  const drop = new Set();
+  const prompts = recs.filter(r => r.event === 'user_prompt' && !r._side);
+  for (const p of prompts) {
+    const t = byAt.get(p.timestamp) || { mode: cfg.default };
+    const turn = recs.filter(r => r !== p && r.parent_task === p.id);
+    const keepHumanFile = (r) => r._fromHumanFile === true;
+    const mainResponses = turn.filter(r => r.event === 'assistant_response' && !r._side);
+    Object.assign(p, { agent: 'human', agent_name: 'participant', agent_type: 'human' });
+    if (t.mode === 'exclude') { drop.add(p); for (const r of turn) if (!keepHumanFile(r)) drop.add(r); continue; }
+    if (t.mode === 'setup') {
+      Object.assign(p, { event: 'human_checkpoint', request: 'Environment setup by the participant (details omitted)' });
+      for (const r of turn) if (!keepHumanFile(r)) drop.add(r);
+      continue;
+    }
+    if (t.mode === 'checkpoint') {
+      Object.assign(p, { event: 'human_checkpoint', request: null });
+      for (const r of mainResponses) drop.add(r);
+      for (const r of turn) if (r.event === 'human_decision' && !keepHumanFile(r)) drop.add(r);
+      continue;
+    }
+    p.request = t.prompt;
+    if (t.dropTools) for (const r of turn) if (!keepHumanFile(r) && !(r.event === 'assistant_response' && !r._side)) drop.add(r);
+    mainResponses.forEach((r, i) => {
+      if (i < mainResponses.length - 1 || !t.answer) drop.add(r);
+      else Object.assign(r, { suggestion: t.answer, request: `Answer to: ${oneLine(t.prompt, 120)}` });
+    });
+  }
+  // instructions sent while the agent was busy (queued commands) become their own prompt records
+  for (const t of cfg.turns.filter(x => x.source === 'queued_command' && x.mode === 'summary')) {
+    const near = recs.filter(r => !r._side && Date.parse(r.timestamp) <= Date.parse(t.at)).pop() || {};
+    recs.push({ timestamp: t.at, stage: stageAt(t.at, stages), agent: 'human', agent_name: 'participant', agent_type: 'human',
+      ai_tool: near.ai_tool || 'Claude Code', model: null, mode: near.mode || 'agent', event: 'user_prompt', context: CONTEXT,
+      request: t.prompt, status: 'info', session_id: near.session_id || null, commit: null, related_ids: [], _seq: (near._seq || 0) + 0.5 });
+  }
+  // commands that write the local planning notes may quote the participant: describe them generically
+  for (const r of recs) {
+    if (drop.has(r) || r.event === 'user_prompt' || typeof r.request !== 'string') continue;
+    if (/_plan([\\/"']|\s|$)/.test(r.request) && /(WORKLOG|STATE|DECISIONS|PLAN|USER_ACTIONS|LOG_SCHEMA|GIT_SETUP|curation-draft)\.md|_plan[\\/]prompts|_plan[\\/]\.allow/.test(r.request)) {
+      r.request = 'Update the local planning notes (_plan/: worklog, state, decisions)';
+    } else if (/ailog-(final-)?dry|topic scan|leak checks|--- scans ---/i.test(r.request)) {
+      // the agent's own privacy scans list the search terms; keep the step, omit the terms
+      r.request = 'Privacy scan of the generated log (search terms omitted)';
+    }
+  }
+  let kept = recs.filter(r => !drop.has(r));
+  // ids of human turns must not carry slugs of the original wording: re-issue them and re-link
+  const remap = {};
+  for (const r of kept) {
+    if (r.event === 'user_prompt' || r.event === 'human_checkpoint') {
+      const nid = makeId(r.timestamp, r.event, r.request || 'checkpoint', 'curated' + r.timestamp);
+      if (r.id) remap[r.id] = nid;
+      r.id = nid;
+      if (!r.parent_task || remap[r.parent_task] === undefined) r.parent_task = nid;
+    } else if (r.event === 'assistant_response') {
+      r.id = makeId(r.timestamp, r.event, r.suggestion || 'answer', 'curated-answer' + r.timestamp + (r._seq || 0));
+    }
+  }
+  for (const r of kept) {
+    if (r.parent_task && remap[r.parent_task]) r.parent_task = remap[r.parent_task];
+    if (Array.isArray(r.related_ids)) r.related_ids = r.related_ids.map(x => remap[x] || x);
+  }
+  kept = kept.filter(r => r.timestamp);
+  return kept;
+}
+function privacyLeaks(records, realTexts) {
+  const hay = normText(records.map(r => JSON.stringify(r)).join('\n'));
+  const leaks = [];
+  for (const raw of realTexts) {
+    const t = normText(raw);
+    for (let i = 0; i + 40 <= t.length; i += 20) {
+      const frag = t.slice(i, i + 40);
+      if (hay.includes(frag)) { leaks.push(frag); break; }
+    }
+  }
+  return leaks;
+}
+
+function rebuild(argv) {
+  let curationFile = null; const paths = [];
+  for (let i = 0; i < argv.length; i++) { if (argv[i] === '--curation') curationFile = argv[++i]; else paths.push(argv[i]); }
+  if (!paths.length) throw new Error('usage: rebuild [--curation FILE] <transcript.jsonl|dir> [...]');
+  const curation = curationFile ? loadCuration(curationFile) : null;
+  const real = { promptTs: new Set(), queuedTs: new Set(), texts: [] };
   ensureDir();
   const stages = readStages();
   const files = collectFiles(paths).map(f => {
@@ -625,6 +730,13 @@ function rebuild(paths) {
         }
         continue;
       }
+      if (!d.side && l.type === 'attachment' && l.attachment && l.attachment.type === 'queued_command') {
+        const qt = stripReminders(userText(l.attachment.prompt));
+        // sub-agent hand-backs and task notifications are queued the same way; only real human messages count
+        const fromAgent = /<agent-message|\[Subagent hand-back\]|<task-notification>|<cross-session-message|Another Claude session sent a message/i.test(qt);
+        if (qt && ts && !fromAgent) { real.queuedTs.add(ts); real.texts.push(qt); }
+        continue;
+      }
       if (l.type !== 'user' || !l.message) continue;
       const content = l.message.content;
       if (Array.isArray(content) && content.some(x => x && x.type === 'tool_result')) {
@@ -677,6 +789,7 @@ function rebuild(paths) {
         continue;
       }
       const r = { ...base(ts, l), event: 'user_prompt', request: text, status: 'info', model: null };
+      real.promptTs.add(ts); real.texts.push(text);
       r.id = makeId(ts, 'user_prompt', text, l.uuid || ts);
       r.parent_task = r.id; r.related_ids = [];
       push(r);
@@ -717,23 +830,31 @@ function rebuild(paths) {
   // merge human decisions (re-link parent_task to the closest preceding prompt)
   const prompts = recs.filter(r => r.event === 'user_prompt' || r.event === 'slash_command').sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
   for (const h of readJsonl(P(F.human))) {
-    const r = { ...h };
+    const r = { ...h, _fromHumanFile: true };
     const t = Date.parse(r.timestamp);
     let pp = null; for (const p of prompts) if (Date.parse(p.timestamp) <= t) pp = p;
     if (pp) { r.parent_task = pp.id; r.related_ids = [...new Set([...(Array.isArray(h.related_ids) ? h.related_ids : []), pp.id])]; if (!r.session_id) r.session_id = pp.session_id; }
     push(r);
   }
+  // curation of human turns (optional, D-41 / D-43)
+  let curated = recs;
+  if (curation) curated = applyCuration(recs, curation, real, stages);
   // commits: first commit at/after a record that produced files or verification evidence
   const commits = gitCommits();
-  if (commits.length) for (const r of recs) {
+  if (commits.length) for (const r of curated) {
     if (!(r.artifacts && r.artifacts.length) && r.event !== 'verification') continue;
     const t = Date.parse(r.timestamp); const c = commits.find(x => x.t >= t);
     if (c) r.commit = c.h;
   }
   // sort, de-duplicate, write
-  recs.sort((a, b) => (Date.parse(a.timestamp) - Date.parse(b.timestamp)) || (a._seq - b._seq));
+  curated.sort((a, b) => (Date.parse(a.timestamp) - Date.parse(b.timestamp)) || (a._seq - b._seq));
   const seenId = new Set(); const final = [];
-  for (const r of recs) { if (!r.timestamp) continue; const rec = makeRecord(r); if (seenId.has(rec.id)) continue; seenId.add(rec.id); final.push(rec); }
+  for (const r of curated) { if (!r.timestamp) continue; const rec = makeRecord(r); if (seenId.has(rec.id)) continue; seenId.add(rec.id); final.push(rec); }
+  if (curation) {
+    const leaks = privacyLeaks(final, real.texts);
+    if (leaks.length) throw new Error(`curation privacy check failed: ${leaks.length} fragment(s) of real human messages remain:\n  - ${leaks.join('\n  - ')}`);
+    console.log(`curation: ${curation.turns.length} entries applied; privacy check passed (no 40-char fragment of ${real.texts.length} real human messages in the output)`);
+  }
   fs.writeFileSync(P(F.jsonl), final.map(r => JSON.stringify(r)).join('\n') + (final.length ? '\n' : ''), 'utf8');
   renderAll(final);
   const c = counts(final);
@@ -790,6 +911,8 @@ function renderLog(records) {
   const L = [];
   L.push('# AI Interaction Log', '');
   L.push('> Generated automatically by `.claude/hooks/ai-log.js` from `logs/ai-interactions.jsonl` (Claude Code hooks + transcript rebuild). Do not edit by hand — run `node .claude/hooks/ai-log.js render`.', '');
+  const curationCfg = readJson(P('curation.json'), null);
+  if (curationCfg && curationCfg.note) L.push(`> **Note on human prompts:** ${curationCfg.note}`, '');
   L.push('| Item | Value |', '|---|---|');
   L.push(`| AI tool | ${cell(tools.join(', ') || 'Claude Code', 300)} |`);
   L.push(`| Models (assistant turns) | ${cell(Object.entries(c.models).map(([m, n]) => `${m} (${n})`).join(', ') || 'unknown', 300)} |`);
@@ -1005,6 +1128,17 @@ function selftest() {
     const lr = cp.spawnSync(process.execPath, ['-e', `process.stdout.write(require(${JSON.stringify(__filename)}).redact('git.acme-internal.example and jdoe_clientco and SomeClientCo-Repo'))`],
       { env: { ...process.env, AI_LOG_REDACT_FILE: rfile }, encoding: 'utf8' });
     check('local redaction file applied (hosts, client names)', !/acme-internal|clientco/i.test(lr.stdout) && /REDACTED:client/.test(lr.stdout), lr.stdout || lr.stderr);
+    // curation (D-41 / D-43): paraphrase applied, original wording gone, unknown timestamps refused
+    const cfile = path.join(tmp, 'curation-test.json');
+    fs.writeFileSync(cfile, JSON.stringify({ note: 'test', turns: [{ at: T(1), mode: 'summary', prompt: 'Implement rule R1 with unit tests.', answer: 'R1 implemented; tests green.' }] }));
+    r = run(['rebuild', '--curation', cfile, tdir]);
+    const cTxt = r.status === 0 ? fs.readFileSync(path.join(tmp, F.jsonl), 'utf8') : '';
+    check('curation: rebuild with curation exits 0 and passes the privacy scan', r.status === 0 && /privacy check passed/.test(r.stdout), oneLine(r.stderr || r.stdout, 200));
+    check('curation: paraphrased prompt and answer applied, original wording gone',
+      cTxt.includes('Implement rule R1 with unit tests.') && cTxt.includes('R1 implemented; tests green.') && !/Implement R1\. token/.test(cTxt) && !/user_prompt-implement-r1-token/.test(cTxt));
+    fs.writeFileSync(cfile, JSON.stringify({ turns: [{ at: T(59), mode: 'summary', prompt: 'An invented prompt' }] }));
+    r = run(['rebuild', '--curation', cfile, tdir]);
+    check('curation: entry without a matching real message is refused', r.status !== 0 && /refusing/.test(r.stderr), oneLine(r.stderr, 200));
   } catch (e) {
     check('selftest ran without exception', false, e && e.stack);
   } finally {
