@@ -1,0 +1,48 @@
+schema: spec-driven
+
+# Project context (constraints an agent cannot infer from the code)
+context: |
+  Invoice approval demo: ASP.NET Core 8 Web API (backend/), plain JS UI (wwwroot/), xUnit tests, Playwright e2e (e2e/).
+  Business rules live only in backend/src/InvoiceApp.Domain; controllers pass session username and role; the UI only renders the API error text.
+  Money is decimal; amounts in messages are formatted N2 with InvariantCulture (50,000.00).
+  The feature is delivered in two separately committed steps: single-approver limits first, then the two-approver rule.
+  A denied approval must change nothing on the invoice and must not call the repository Update.
+
+rules:
+  specs:
+    - Every requirement uses SHALL or MUST and has at least one scenario.
+    - Cover both sides of every limit (49,999.99 / 50,000.00 / 50,000.01 / 500,000.00 / 500,000.01).
+    - Quote denial messages exactly as AGENTS.md lists them.
+  tasks:
+    - Group tasks by delivery step (single-approver, two-approver, e2e, mutation, review) so each group maps to one commit.
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

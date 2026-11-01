@@ -1,0 +1,192 @@
+{
+  "note": "Human prompts are paraphrased from the real session for clarity. The participant's own wording, status checks and discussions about the log format are omitted at the participant's request, and environment-setup turns are condensed to one line. Every paraphrase is tied to the timestamp of the real message (the rebuild refuses entries without one, and fails if any fragment of a real human message remains). All agent actions, sub-agents, skills, tools, verification results and commits are recorded as they happened.",
+  "default": "checkpoint",
+  "turns": [
+    {
+      "at": "2026-10-27T18:04:11.080Z",
+      "mode": "summary",
+      "prompt": "Analyse the assignment PDF and the reference repository. Produce a complete implementation and demo-video plan, then explain the assignment and plan simply. The agent does all implementation, testing and documentation; I only record the video and submit.\n\nWorking rules: verify every step from live output, log everything so work can resume after any interruption, re-check logs and live code before continuing, and never change git remotes or cloud resources yourself; give me the command instead.",
+      "answer": "Read the assignment PDF and every file of the reference repository, checked the toolchain (the .NET SDK was missing), and wrote the plan files: phases, the fourteen deliverables, a commit plan, a test matrix, decisions and a resumable worklog. Explained the assignment and the plan in short points."
+    },
+    {
+      "at": "2026-11-01T14:00:57.115Z",
+      "mode": "summary",
+      "prompt": "Plan owners per stage: the agent completes everything; I handle only the restart, the push and pull request, and the video. Run independent work with parallel agents.\n\nGenerate the AI interaction log automatically through hooks: structured JSONL plus a readable summary, covering tool, model, agent type, mode, prompts, skills, sub-agents, MCP tools, actions, human decisions, evidence and outcome.",
+      "answer": "Re-planned with an owner for every step, parallel agents on disjoint file sets and a local run-and-test protocol; adopted the requested log schema (JSONL plus readable summary) and listed what the demo video must show live."
+    },
+    {
+      "at": "2026-11-01T14:49:18.675Z",
+      "mode": "summary",
+      "prompt": "Use Claude Code as the AI tool. No workshop review prompt is available, so write a structured review prompt of your own and state that in the write-up.",
+      "answer": "Recorded the decisions: Claude Code as the tool, our own structured review prompt, local commits by the agent with push and pull request done by the participant."
+    },
+    {
+      "at": "2026-11-01T15:25:10.046Z",
+      "mode": "setup"
+    },
+    {
+      "at": "2026-11-01T15:27:02.614Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:27:52.715Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:29:02.814Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:29:56.786Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:34:54.006Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:40:54.053Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:42:42.790Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:43:55.551Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T15:45:24.569Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:23:16.878Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:29:42.458Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:32:00.301Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:32:39.564Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:33:21.587Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:34:11.188Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:34:45.226Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:35:49.850Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T16:38:23.741Z",
+      "mode": "checkpoint"
+    },
+    {
+      "at": "2026-11-01T16:41:39.781Z",
+      "mode": "summary",
+      "prompt": "Local commits by the agent are allowed; I push and open the pull request. Use the GitHub no-reply address as commit author, and clone from my fork.",
+      "answer": "Set the repository-local commit identity to the GitHub no-reply address, confirmed the clone of the fork, inspected the upstream demo branches read-only (they hold no review prompt) and moved the pull request before the video in the plan."
+    },
+    {
+      "at": "2026-11-01T16:47:10.559Z",
+      "mode": "checkpoint"
+    },
+    {
+      "at": "2026-11-01T16:47:33.877Z",
+      "mode": "checkpoint"
+    },
+    {
+      "at": "2026-11-01T16:48:56.682Z",
+      "mode": "checkpoint"
+    },
+    {
+      "at": "2026-11-01T16:51:36.723Z",
+      "mode": "summary",
+      "prompt": "Continue from the plan: capture the baseline and the mutation score before any change, then build the agent context in parallel (AGENTS.md, skills, sub-agents, hooks) and commit it.",
+      "answer": "Baseline: build clean, 7 tests green; Stryker before: 30.77 % overall, ApprovalService 60 %. Three parallel agents wrote AGENTS.md, the hooks and logger, and the skills and sub-agents; every file was reviewed, a privacy gap in the logger was fixed, and commit C1 was made."
+    },
+    {
+      "at": "2026-11-01T17:11:02.928Z",
+      "mode": "summary",
+      "prompt": "Prepare a submission-ready zip and confirm when everything is done.",
+      "answer": "Agreed: all remaining work, the pull-request description and a verified zip are produced by the agent; only the video remains afterwards."
+    },
+    {
+      "at": "2026-11-01T17:12:55.185Z",
+      "mode": "summary",
+      "prompt": "Order of delivery: finish all work, open the pull request with the review verdicts in its description, then submit the zip; the video comes last and its link is provided with the submission.",
+      "answer": "Recorded the delivery order: pull request with the review verdicts first, then the zip; the video and its link last."
+    },
+    {
+      "at": "2026-11-01T17:24:59.881Z",
+      "mode": "setup"
+    },
+    {
+      "at": "2026-11-01T17:26:49.267Z",
+      "mode": "summary",
+      "prompt": "Complete the remaining work end to end: specification, step 1, step 2, end-to-end test, mutation testing, review and write-up. Use parallel agents where files do not overlap, verify everything, and work safely.",
+      "answer": "OpenSpec change written and strictly validated (C2). Step 1 and step 2 implemented by parallel implementer and test-author agents, each followed by an adversarial test review whose eight findings were fixed and proven with hand-applied mutants, plus API and UI checks (C3, C4). Playwright end-to-end test added and run from a clean start (C5). Mutation testing started."
+    },
+    {
+      "at": "2026-11-01T17:55:35.708Z",
+      "mode": "summary",
+      "prompt": "Pause at the next safe point.",
+      "answer": null,
+      "source": "queued_command"
+    },
+    {
+      "at": "2026-11-01T17:57:18.209Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T18:00:04.211Z",
+      "mode": "summary",
+      "prompt": "Set the mutation-score target yourself, keeping the before and after comparison honest.",
+      "answer": "Target set: make Approve and LimitFor genuinely mutable, kill every non-equivalent mutant in the approval code, add clearly labelled tests for the untested DiscountCalculator and Invoice defaults, and keep the Stryker configuration identical to the before run.",
+      "dropTools": true
+    },
+    {
+      "at": "2026-11-01T18:02:27.205Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T18:04:19.292Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T18:05:49.568Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T18:06:41.127Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T18:07:37.124Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T18:07:57.014Z",
+      "mode": "exclude"
+    },
+    {
+      "at": "2026-11-01T18:10:12.989Z",
+      "mode": "checkpoint"
+    }
+  ]
+}

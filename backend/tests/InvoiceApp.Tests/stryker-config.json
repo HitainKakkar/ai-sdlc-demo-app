@@ -1,0 +1,8 @@
+{
+  "stryker-config": {
+    "project": "InvoiceApp.Domain.csproj",
+    "reporters": ["progress", "cleartext", "markdown", "json", "html"],
+    "thresholds": { "high": 80, "low": 60, "break": 0 },
+    "concurrency": 4
+  }
+}
