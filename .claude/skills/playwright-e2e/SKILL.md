@@ -53,6 +53,8 @@ npm run report           # open last HTML report
 `playwright.config.ts` starts `dotnet run --project ../backend/src/InvoiceApp.Api` on http://localhost:5000 (timeout 120 s) and **reuses** anything already on port 5000. Before running: make sure no stale API from older code holds :5000 (`netstat -ano | findstr :5000` → stop that PID), or the test runs against old code. `dotnet` must be on PATH for the webServer (else run `_plan/setup-dotnet-path.ps1` or start the API yourself first).
 
 ## Manual verification with the Playwright MCP
+> Verified 2026-11-01: in this environment the Playwright MCP browser refuses `localhost` and `127.0.0.1` (`net::ERR_BLOCKED_BY_CLIENT`). Use the repo's own Playwright instead: a short Node script that `require`s `e2e/node_modules/@playwright/test`, drives the same role-based steps and calls `page.screenshot(...)` into `docs/evidence/`. The MCP steps below apply only where local addresses are allowed.
+
 With the API running (`dotnet run --project backend/src/InvoiceApp.Api`):
 1. `mcp__playwright__browser_navigate` → `http://localhost:5000`
 2. `browser_fill_form` / `browser_type` Username + Password, `browser_click` "Sign in"

@@ -4,24 +4,24 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
 
 ## 1. Step 1: single-approver limits (commit C3)
 
-- [ ] 1.1 Add `backend/src/InvoiceApp.Domain/ApprovalLimits.cs`:
+- [x] 1.1 Add `backend/src/InvoiceApp.Domain/ApprovalLimits.cs`:
   - consts `ManagerLimit = 50_000m`, `DirectorLimit = 500_000m` and `TwoApproverThreshold = 500_000m`;
   - `decimal? LimitFor(string? role)`, which returns 50,000 for `Manager`, 500,000 for `Director` and `null` otherwise, with exact-case matching.
 
   Verify with `ApprovalLimitsTests` (Manager, Director, Admin, Approver, `""`, `null`, `manager` → `null`).
-- [ ] 1.2 Add `backend/src/InvoiceApp.Domain/ApprovalDeniedException.cs` (`public class ApprovalDeniedException : InvalidOperationException`). Verify that a test asserts `Assert.Throws<ApprovalDeniedException>` on a denial and that `ApiControllerBase.Handle` needs no change, because the 409 mapping already exists.
-- [ ] 1.3 Change `ApprovalService.Approve` to `Approve(string invoiceId, string approver, string approverRole)` with this check order: `Find` → `EnsurePending` → `LimitFor` null → deny (a) → amount > `TwoApproverThreshold` → deny (c) → amount > limit → deny (b). Only after all checks: set `Status`, `DecidedBy` and `DecidedAt`, then `Update`. Format amounts with `ToString("N2", CultureInfo.InvariantCulture)`. Verify that `dotnet build backend/InvoiceApp.sln` succeeds and that the code review shows no assignment before the last throw.
-- [ ] 1.4 Use messages (a), (b) and (c) from design.md D5 verbatim, with the invoice id, amount and role filled in. Verify with unit tests that assert the limit, the invoice id and the role in each message.
-- [ ] 1.5 Update `ApprovalsController`: change the attribute to `[RequireRole("Manager", "Director", "Admin")]` and pass `HttpContext.GetSession().Role` to `Approve`. Add no rule logic to the controller. Verify that the build passes and that the smoke test in 1.10 returns 409 for Manager on INV-1006.
-- [ ] 1.6 Update `appsettings.json` users to `demo.manager` (Manager), `demo.director` (Director), `demo.director2` (Director) and `demo.admin` (Admin), all `ChangeMe123!`, and remove `demo.approver`. Verify that each user signs in through `POST /api/auth/login`.
-- [ ] 1.7 Update `InMemoryInvoiceRepository`:
+- [x] 1.2 Add `backend/src/InvoiceApp.Domain/ApprovalDeniedException.cs` (`public class ApprovalDeniedException : InvalidOperationException`). Verify that a test asserts `Assert.Throws<ApprovalDeniedException>` on a denial and that `ApiControllerBase.Handle` needs no change, because the 409 mapping already exists.
+- [x] 1.3 Change `ApprovalService.Approve` to `Approve(string invoiceId, string approver, string approverRole)` with this check order: `Find` → `EnsurePending` → `LimitFor` null → deny (a) → amount > `TwoApproverThreshold` → deny (c) → amount > limit → deny (b). Only after all checks: set `Status`, `DecidedBy` and `DecidedAt`, then `Update`. Format amounts with `ToString("N2", CultureInfo.InvariantCulture)`. Verify that `dotnet build backend/InvoiceApp.sln` succeeds and that the code review shows no assignment before the last throw.
+- [x] 1.4 Use messages (a), (b) and (c) from design.md D5 verbatim, with the invoice id, amount and role filled in. Verify with unit tests that assert the limit, the invoice id and the role in each message.
+- [x] 1.5 Update `ApprovalsController`: change the attribute to `[RequireRole("Manager", "Director", "Admin")]` and pass `HttpContext.GetSession().Role` to `Approve`. Add no rule logic to the controller. Verify that the build passes and that the smoke test in 1.10 returns 409 for Manager on INV-1006.
+- [x] 1.6 Update `appsettings.json` users to `demo.manager` (Manager), `demo.director` (Director), `demo.director2` (Director) and `demo.admin` (Admin), all `ChangeMe123!`, and remove `demo.approver`. Verify that each user signs in through `POST /api/auth/login`.
+- [x] 1.7 Update `InMemoryInvoiceRepository`:
   - seed `INV-1006` (75,000.00, PendingApproval) and `INV-1007` (750,000.00, PendingApproval);
   - set `_nextNumber = 1008`;
   - set `INV-1003.DecidedBy = "demo.director"`.
 
   Verify with `GET /api/invoices`, which should list both seeds. A newly created invoice gets `INV-1008`.
-- [ ] 1.8 Add `public int UpdateCalls` to `FakeInvoiceRepository` and increment it in `Update`. Verify that the existing approve and reject success tests assert `UpdateCalls == 1`.
-- [ ] 1.9 Update `ApprovalServiceTests` for the new signature and add Step 1 tests:
+- [x] 1.8 Add `public int UpdateCalls` to `FakeInvoiceRepository` and increment it in `Update`. Verify that the existing approve and reject success tests assert `UpdateCalls == 1`.
+- [x] 1.9 Update `ApprovalServiceTests` for the new signature and add Step 1 tests:
   - Manager boundaries: 49,999.99 approved, 50,000.00 approved, 50,000.01 denied (b), 500,000.00 denied (b).
   - Director: 50,000.01 approved, 500,000.00 approved alone.
   - Amounts above 500,000.00: Manager and Director both denied with (c).
@@ -30,8 +30,8 @@ Each numbered group maps to one commit. A box is ticked only in the commit that 
   - Every denial asserts the type, the message parts, all six fields unchanged on the same instance and `UpdateCalls == 0`.
 
   Verify that `dotnet test backend/InvoiceApp.sln` is green and record the counts.
-- [ ] 1.10 Smoke test against the running API (`dotnet run --project backend/src/InvoiceApp.Api`): sign in as `demo.manager`, then `POST /api/approvals/INV-1006/approve`. Expect 409 with `{"error":"A Manager may approve invoices up to 50,000.00; invoice INV-1006 is 75,000.00. A Director must approve it."}`. `GET /api/invoices/INV-1006` should show `PendingApproval` with `decidedBy` null. Take a screenshot of the alert to `docs/evidence/step1-manager-denied.png`.
-- [ ] 1.11 Update `AGENTS.md`:
+- [x] 1.10 Smoke test against the running API (`dotnet run --project backend/src/InvoiceApp.Api`): sign in as `demo.manager`, then `POST /api/approvals/INV-1006/approve`. Expect 409 with `{"error":"A Manager may approve invoices up to 50,000.00; invoice INV-1006 is 75,000.00. A Director must approve it."}`. `GET /api/invoices/INV-1006` should show `PendingApproval` with `decidedBy` null. Take a screenshot of the alert to `docs/evidence/step1-manager-denied.png`.
+- [x] 1.11 Update `AGENTS.md`:
   - drop "(today: Approver or Admin)" from the `[RequireRole]` line;
   - change the Demo accounts section to the four new users.
 

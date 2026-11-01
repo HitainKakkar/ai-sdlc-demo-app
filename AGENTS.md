@@ -66,7 +66,7 @@ Code that looks right but is not, and what a test must assert to catch it:
 
 - Controllers live in `Controllers/`, one per resource, route `api/[controller]`. Request bodies are `record` types declared inside the controller.
 - Controllers inherit `ApiControllerBase` and use `Handle(...)` so service errors map to 404 (`KeyNotFoundException`), 409 (`InvalidOperationException`, incl. `ApprovalDeniedException`) and 400 (`ArgumentException`).
-- Every endpoint is behind sign-in. Restrict actions with `[RequireRole("...")]`: destructive actions are Admin only. The approvals endpoint is gated to `Manager`, `Director` and `Admin` once the single-approver step lands (today: Approver or Admin); the attribute only gates the endpoint, the Domain decides who may approve what.
+- Every endpoint is behind sign-in. Restrict actions with `[RequireRole("...")]`: destructive actions are Admin only. The approvals endpoint is gated to `Manager`, `Director` and `Admin`; the attribute only gates the endpoint, the Domain decides who may approve what (Admin may reject but gets the no-authority reason on approve).
 - Business rules go in the Domain project, never in controllers.
 - Register services in `Program.cs`. Repositories are interfaces in Domain with an in-memory implementation in Api.
 - Every new rule or endpoint needs tests. Use `FakeInvoiceRepository` in tests.
@@ -150,8 +150,12 @@ Hooks (wired in `.claude/settings.json`): `ai-log.js` (logging), `guard.js` (blo
 
 ## Demo accounts (not real credentials)
 
-- `demo.approver` / `ChangeMe123!` (role Approver)
-- `demo.admin` / `ChangeMe123!` (role Admin)
+- `demo.manager` / `ChangeMe123!` (role Manager, approves up to 50,000.00)
+- `demo.director` / `ChangeMe123!` (role Director, approves up to 500,000.00; second approver above that)
+- `demo.director2` / `ChangeMe123!` (role Director, a second, different Director for invoices above 500,000.00)
+- `demo.admin` / `ChangeMe123!` (role Admin: may reject and delete, cannot approve)
+
+Seeded pending invoices for demos: `INV-1006` (75,000.00, above the Manager limit) and `INV-1007` (750,000.00, needs two approvers).
 
 ## Never
 

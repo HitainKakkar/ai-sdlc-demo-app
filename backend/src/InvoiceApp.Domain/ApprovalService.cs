@@ -1,8 +1,11 @@
+using System.Globalization;
+
 namespace InvoiceApp.Domain;
 
 /// <summary>
 /// Moves an invoice through its lifecycle: Draft -> PendingApproval -> Approved or Rejected.
-/// One invoice at a time, decided as a whole by a single approver.
+/// Approval is limited by role (see <see cref="ApprovalLimits"/>): a Manager up to 50,000.00,
+/// a Director up to 500,000.00; other roles cannot approve. Limits never apply to rejection.
 /// </summary>
 public class ApprovalService
 {
@@ -28,10 +31,33 @@ public class ApprovalService
         return invoice;
     }
 
-    public Invoice Approve(string invoiceId, string approver)
+    /// <summary>
+    /// Approves a pending invoice if the approver's role allows it (see <see cref="ApprovalLimits"/>).
+    /// Every check runs before the invoice is changed or saved; a denial throws
+    /// <see cref="ApprovalDeniedException"/> and leaves the invoice untouched.
+    /// </summary>
+    public Invoice Approve(string invoiceId, string approver, string approverRole)
     {
         var invoice = Find(invoiceId);
         EnsurePending(invoice);
+
+        var limit = ApprovalLimits.LimitFor(approverRole)
+            ?? throw new ApprovalDeniedException(
+                $"Role '{approverRole}' cannot approve invoices. Only a Manager or a Director can approve.");
+
+        if (invoice.Amount > ApprovalLimits.TwoApproverThreshold)
+        {
+            throw new ApprovalDeniedException(
+                $"Invoice {invoice.Id} is {FormatAmount(invoice.Amount)}, above {FormatAmount(ApprovalLimits.TwoApproverThreshold)}, " +
+                "and needs two approvers; two-approver approval is not available yet.");
+        }
+
+        if (invoice.Amount > limit)
+        {
+            throw new ApprovalDeniedException(
+                $"A {approverRole} may approve invoices up to {FormatAmount(limit)}; " +
+                $"invoice {invoice.Id} is {FormatAmount(invoice.Amount)}. A Director must approve it.");
+        }
 
         invoice.Status = InvoiceStatus.Approved;
         invoice.DecidedBy = approver;
@@ -57,6 +83,9 @@ public class ApprovalService
         _repository.Update(invoice);
         return invoice;
     }
+
+    private static string FormatAmount(decimal amount) =>
+        amount.ToString("N2", CultureInfo.InvariantCulture);
 
     private Invoice Find(string invoiceId) =>
         _repository.GetById(invoiceId)

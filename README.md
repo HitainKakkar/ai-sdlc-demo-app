@@ -12,7 +12,9 @@ Open http://localhost:5000 and sign in:
 
 | User | Password | Role |
 | --- | --- | --- |
-| `demo.approver` | `ChangeMe123!` | Approver |
+| `demo.manager` | `ChangeMe123!` | Manager |
+| `demo.director` | `ChangeMe123!` | Director |
+| `demo.director2` | `ChangeMe123!` | Director |
 | `demo.admin` | `ChangeMe123!` | Admin |
 
 These are demo accounts for a local, in-memory app. They are not real credentials.
@@ -21,7 +23,17 @@ These are demo accounts for a local, in-memory app. They are not real credential
 
 1. Create an invoice (it starts as a draft).
 2. Submit it for approval.
-3. An approver approves it, or rejects it with a reason.
+3. A Manager or Director approves it within their limit, or anyone with access rejects it with a reason.
+
+Approval limits by role:
+
+| Role | May approve alone |
+| --- | --- |
+| Manager | up to 50,000.00 |
+| Director | up to 500,000.00 |
+| Admin | cannot approve (may reject and delete) |
+
+Invoices above 500,000.00 need two approvers; until that rule lands they cannot be approved. A denied approval returns HTTP 409 with the reason, the UI shows it, and the invoice does not change.
 
 Invoices move through Draft, Pending Approval, then Approved or Rejected.
 
@@ -39,6 +51,7 @@ backend/
   src/InvoiceApp.Api      controllers, sign-in, web UI (wwwroot)
   tests/InvoiceApp.Tests  xUnit tests
 docs/use-cases            short feature briefs
+openspec/                 OpenSpec specification (change add-approval-limits-by-role)
 AGENTS.md                 conventions for AI coding agents
 ```
 
